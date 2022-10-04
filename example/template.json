@@ -1,42 +1,42 @@
 {
-	"interlink": {
-		"template": {
-			"_id": "null",
-			"name": "game_one",
-			"filename": "game_1.json",
-			"tagList": [
-				"process1",
-				"process3"
-			],
-			"taskList": [
-				{
-					"id": "one",
-					"management": 100,
-					"development": 30,
-					"exploitation": 100,
-					"completed": false,
-					"playerList": [],
-					"subtaskList": []
-				},
-				{
-					"id": "two",
-					"management": 40,
-					"development": 100,
-					"exploitation": 40,
-					"completed": false,
-					"playerList": [],
-					"subtaskList": []
-				},
-				{
-					"id": "three",
-					"management": 40,
-					"development": 100,
-					"exploitation": 40,
-					"completed": false,
-					"playerList": [],
-					"subtaskList": []
-				}
-			]
-		}
-	}
+  "interlink": {
+    "template": {
+      "_id": "null",
+      "name": "game_one",
+      "filename": "game_1.json",
+      "tagList": [
+        "process1",
+        "process3"
+      ],
+      "taskList": [
+        {
+          "id": "one",
+          "management": 100,
+          "development": 30,
+          "exploitation": 100,
+          "completed": false,
+          "playerList": [],
+          "subtaskList": []
+        },
+        {
+          "id": "two",
+          "management": 40,
+          "development": 100,
+          "exploitation": 40,
+          "completed": false,
+          "playerList": [],
+          "subtaskList": []
+        },
+        {
+          "id": "three",
+          "management": 40,
+          "development": 100,
+          "exploitation": 40,
+          "completed": false,
+          "playerList": [],
+          "subtaskList": []
+        }
+      ]
+    }
+  }
 }
