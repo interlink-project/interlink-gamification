@@ -10,25 +10,16 @@ spring:
     allow-bean-definition-overriding: true
     allow-circular-references: true
   data: 
-    mongodb: 
-      host: localhost
-      port: 27017
-      database: interlink-gamification
+    mongodb:
+     uri: ${SPRING_DATA_MONGODB_URL:mongodb://localhost:27017/interlink-gamification}
+     database: ${MONGO_DBNAME:interlink-gamification}
+
   mvc:
     pathmatch:
       matching-strategy: ANT_PATH_MATCHER
 
 import: 
-  dir: /Users/mtrainotti/dev
+  dir: ${IMPORT_DIR:/home/dev/gamification/interlink}
 
 export: 
-  dir: /Users/mtrainotti/dev
-
-
-#
-# RABBITMQ CONFIGURATIONS
-#
-
-rabbitmq: 
-  enabled: false
-  
+  dir: /home/dev/gamification/interlink

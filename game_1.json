@@ -1,0 +1,138 @@
+{
+	"interlink": {
+		"game": {
+			"id": null,
+			"name": "game_one",
+			"owner": "interlink",
+			"domain": "",
+			"actions": [
+				"update_player_points"
+			],
+			"tasks": [],
+			"rules": null,
+			"concepts": [
+				{
+					"obj": {
+						"id": "1",
+						"name": "management",
+						"score": 0.0,
+						"periods": {
+							"weekly": {
+								"start": 1601071200000,
+								"end": null,
+								"period": 604800000,
+								"identifier": "weekly",
+								"capacity": 0,
+								"instances": {}
+							},
+							"daily": {
+								"start": 1601071200000,
+								"end": null,
+								"period": 86400000,
+								"identifier": "daily",
+								"capacity": 7,
+								"instances": {}
+							}
+						}
+					},
+					"type": "eu.trentorise.game.model.PointConcept"
+				},
+				{
+					"obj": {
+						"id": "1",
+						"name": "development",
+						"score": 0.0,
+						"periods": {
+							"weekly": {
+								"start": 1601071200000,
+								"end": null,
+								"period": 604800000,
+								"identifier": "weekly",
+								"capacity": 0,
+								"instances": {}
+							},
+							"daily": {
+								"start": 1601071200000,
+								"end": null,
+								"period": 86400000,
+								"identifier": "daily",
+								"capacity": 7,
+								"instances": {}
+							}
+						}
+					},
+					"type": "eu.trentorise.game.model.PointConcept"
+				},
+				{
+					"obj": {
+						"id": "1",
+						"name": "exploitation",
+						"score": 0.0,
+						"periods": {
+							"weekly": {
+								"start": 1601071200000,
+								"end": null,
+								"period": 604800000,
+								"identifier": "weekly",
+								"capacity": 0,
+								"instances": {}
+							},
+							"daily": {
+								"start": 1601071200000,
+								"end": null,
+								"period": 86400000,
+								"identifier": "daily",
+								"capacity": 7,
+								"instances": {}
+							}
+						}
+					},
+					"type": "eu.trentorise.game.model.PointConcept"
+				}
+			],
+			"levels": [],
+			"expiration": 0,
+			"terminated": false,
+			"settings": {
+				"statisticsConfig": {
+					"development": "weekly",
+					"management": "weekly",
+					"exploitation": "weekly"
+				},
+				"challengeSettings": {
+					"disclosure": {
+						"startDate": 1591178400000,
+						"frequency": {
+							"value": 7,
+							"unit": "DAY"
+						}
+					}
+				}
+			}
+		},
+		"rules": [
+			{
+				"gameId": null,
+				"name": "update_development_points",
+				"id": null,
+				"content": "package eu.trentorise.game.model\n\nimport eu.trentorise.game.core.Utility;\n\n//declare any global variables here\nglobal Utility utils;\n\nrule \"update_development_points\"\nwhen\n   InputData( $development : data[\"development\"])\n    InputData( $devComplexity: data[\"devComplexity\"]);\n    $pc : PointConcept(name == \"development\")\nthen\n     utils.log(\"apply \\'update development points\\'\");\nDouble development = $development != null ? (Double) $development : 0;\n\nDouble devComplexity = $devComplexity != null ? (Double) $devComplexity : 0;\n\n$pc.setScore($pc.getScore() + (development * devComplexity));\nupdate($pc);\nend",
+				"inputStream": {}
+			},
+			{
+				"gameId": null,
+				"name": "update_management_points",
+				"id": null,
+				"content": "package eu.trentorise.game.model\n\nimport eu.trentorise.game.core.Utility;\n\n//declare any global variables here\nglobal Utility utils;\n\nrule \"update_management_points\"\nwhen\n    InputData( $management : data[\"management\"])\n      InputData( $manageComplexity : data[\"manageComplexity\"])\n  $pc : PointConcept(name == \"management\")\nthen\n  utils.log(\"apply \\'update management points\\'\");\nDouble management = $management != null ? (Double) $management : 0;\n\nDouble manageComplexity = $manageComplexity != null ? (Double) $manageComplexity : 0;\n\n$pc.setScore($pc.getScore() + (management * manageComplexity));\nupdate($pc);\nend",
+				"inputStream": {}
+			},
+			{
+				"gameId": null,
+				"name": "update_exploitation_points",
+				"id": null,
+				"content": "package eu.trentorise.game.model\n\nimport eu.trentorise.game.core.Utility;\n\n//declare any global variables here\nglobal Utility utils;\nrule \"update_exploitation_points\"\nwhen\n    InputData( $exploitation : data[\"exploitation\"])\n  InputData( $exploitComplexity : data[\"exploitComplexity\"])\n$pc : PointConcept(name == \"exploitation\")\nthen\n utils.log(\"apply \\'update exploitation points\\'\");\nDouble exploitation = $exploitation != null ? (Double) $exploitation : 0;\n\nDouble exploitComplexity = $exploitComplexity != null ? (Double) $exploitComplexity : 0;\n\n$pc.setScore($pc.getScore() + (exploitation * exploitComplexity));\nupdate($pc);\nend",
+				"inputStream": {}
+			}
+		],
+		"challengeModels": []
+	}
+}

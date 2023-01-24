@@ -1,0 +1,19 @@
+package eu.trentorise.game.model
+
+import eu.trentorise.game.core.Utility;
+
+//declare any global variables here
+global Utility utils;
+
+rule "update_management_points"
+when
+    InputData( $management : data["management"])
+    $pc : PointConcept(name == "management")
+then
+    utils.log("apply \'update management points\'");
+    Double management = $management != null ? (Double) $management : 0;
+
+    
+    $pc.setScore($pc.getScore() + management);
+    update($pc);
+end

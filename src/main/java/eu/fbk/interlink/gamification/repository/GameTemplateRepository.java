@@ -18,6 +18,8 @@ public interface GameTemplateRepository extends MongoRepository<InterlinkGameTem
 	Optional<InterlinkGameTemplate> findByProcessIdAndName(String processId, String name);
 	
 	List<InterlinkGameTemplate> findByTagList(List<String> tagList);
+	
+	List<InterlinkGameTemplate> findByTagListIn(List<String> tagList);
 
 	
 }
