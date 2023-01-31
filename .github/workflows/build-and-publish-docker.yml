@@ -1,0 +1,51 @@
+name: build-and-publish-docker
+
+on:
+
+  workflow_dispatch:
+
+  push:
+    tags:
+      - '*'
+
+    branches:
+      - master
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y%m%d')"
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push Docker Image
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            interlinkproject/interlink-gamification:${{ github.ref_name }}
+            interlinkproject/interlink-gamification:${{ github.ref_name }}.${{ steps.date.outputs.date }}
+          cache-from: type=registry,ref=interlinkproject/interlink-gamification:buildcache
+          cache-to: type=registry,ref=interlinkproject/interlink-gamification:buildcache,mode=max
+      - name: Trigger Dev Deployment
+        uses: octokit/request-action@v2.x
+        id: trigger_dev_deployment
+        with:
+          route: POST /repos/{owner}/{repo}/dispatches
+          owner: interlink-project
+          repo: interlink-project
+          event_type: update-dev-environment
+        env:
+          GITHUB_TOKEN: ${{ secrets.INTERLINK_PROJECT_GITHUB_TOKEN }}
