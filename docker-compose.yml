@@ -8,18 +8,40 @@ services:
       - "50000:27017"
     volumes:
       - mongo-data:/data/db
+    networks:
+      - traefik-public
   gamification-engine:
     build:
       context: .
     container_name: interlink-gamification-engine
-    ports:
-      - "8080:8080"
+    # ports:
+    #   - "80:8080"
     depends_on:
       - mongo
     links:
       - mongo:mongodb
-    env_file: interlink-gamification.env
+    environment:
+      - PROTOCOL=http://
+      - SERVER_NAME=${DOMAIN?Variable not set}
+      - PORT=${PORT}
+      - BASE_PATH=/interlink-gamification
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.http.routers.${STACK_NAME?Variable not set}-interlink-gamification-http.rule=PathPrefix(`/interlink-gamification`)
+      - traefik.http.services.${STACK_NAME?Variable not set}-interlink-gamification.loadbalancer.server.port=${PORT}
+      - traefik.http.routers.${STACK_NAME?Variable not set}-interlink-gamification-http.middlewares=interlink-gamification-stripprefix
+      - traefik.http.middlewares.interlink-gamification-stripprefix.stripprefix.prefixes=/interlink-gamification
+    networks:
+      - traefik-public
+    env_file: 
+      - interlink-gamification.env
     volumes:
       - ./logs:/home/interlink-gamification/logs
 volumes:
   mongo-data:
+
+
+networks:
+  traefik-public:
+    external: true
