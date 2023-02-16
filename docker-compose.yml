@@ -15,7 +15,7 @@ services:
       context: .
     container_name: interlink-gamification-engine
     # ports:
-    #   - "80:8080"
+    #   - "8080:8080"
     depends_on:
       - mongo
     links:
@@ -30,8 +30,8 @@ services:
       - traefik.docker.network=traefik-public
       - traefik.http.routers.${STACK_NAME?Variable not set}-interlink-gamification-http.rule=PathPrefix(`/interlink-gamification`)
       - traefik.http.services.${STACK_NAME?Variable not set}-interlink-gamification.loadbalancer.server.port=${PORT}
-      - traefik.http.routers.${STACK_NAME?Variable not set}-interlink-gamification-http.middlewares=interlink-gamification-stripprefix
-      - traefik.http.middlewares.interlink-gamification-stripprefix.stripprefix.prefixes=/interlink-gamification
+      # - traefik.http.routers.${STACK_NAME?Variable not set}-interlink-gamification-http.middlewares=interlink-gamification-stripprefix
+      # - traefik.http.middlewares.interlink-gamification-stripprefix.stripprefix.prefixes=/interlink-gamification
     networks:
       - traefik-public
     env_file: 
