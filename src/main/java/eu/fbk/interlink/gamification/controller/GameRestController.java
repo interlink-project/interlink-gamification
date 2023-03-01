@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -74,6 +75,18 @@ public class GameRestController {
 
 		return game;
 	}
+	
+	/**
+	 * Return the game with a specific gameId
+	 * 
+	 * @param gameId Game Id
+	 * @return Game
+	 */
+	@DeleteMapping(value = "/game/{gameId}")
+	public void deleteGame(@PathVariable String gameId) {
+		gameId = ControllerUtils.decodePathVariable(gameId);
+		gameComponent.deleteGameById(gameId);
+	}
 
 	/**
 	 * Return all the games present in the DB related to a process
@@ -135,7 +148,7 @@ public class GameRestController {
 		newGame = gameComponent.saveOrUpdateGame(newGame);
 		logger.info("New game " + newGame.getName() + " for processId " + newGame.getProcessId() + "has been created");
 
-		return new ResponseEntity("Game updated successfully", HttpStatus.OK);
+		return new ResponseEntity(newGame, HttpStatus.OK);
 	}
 
 	/**
