@@ -240,8 +240,8 @@ public class GameRestController {
 					savedTask.getPlayers().add(updated);
 				}
 			}
-			gameComponent.saveOrUpdateGame(game.get());
-			return new ResponseEntity("Task updated successfully", HttpStatus.OK);
+			InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());
+			return new ResponseEntity(result, HttpStatus.OK);
 		} else {
 			return new ResponseEntity("Task " + task.getId() + " not present inside game",
 					HttpStatus.PRECONDITION_FAILED);
@@ -286,9 +286,8 @@ public class GameRestController {
 						HttpStatus.PRECONDITION_FAILED);
 			}
 			if (update) {
-				gameComponent.saveOrUpdateGame(game.get());
-				return new ResponseEntity("Player " + player.getId() + " has been added to task " + taskId,
-						HttpStatus.OK);
+				InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());
+				return new ResponseEntity(result, HttpStatus.OK);
 			}
 		} else {
 			return new ResponseEntity("Task " + taskId + " not present inside game", HttpStatus.PRECONDITION_FAILED);
@@ -348,8 +347,8 @@ public class GameRestController {
 		}
 
 		if (update) {
-			gameComponent.saveOrUpdateGame(game.get());
-			return new ResponseEntity("Task " + taskId + " has been completed", HttpStatus.OK);
+			InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());			
+			return new ResponseEntity(result, HttpStatus.OK);
 		}
 		gameComponent.saveOrUpdateGame(game.get());
 		return new ResponseEntity("Task " + taskId + " is not present in game " + gameId,
@@ -398,8 +397,8 @@ public class GameRestController {
 			}
 		}
 
-		gameComponent.saveOrUpdateGame(game.get());
-		return new ResponseEntity("Subtask " + subtask.getId() + "  added successfully", HttpStatus.OK);
+		InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());
+		return new ResponseEntity(result, HttpStatus.OK);
 	}
 
 	/**
@@ -474,9 +473,8 @@ public class GameRestController {
 						.findAny().orElse(null);
 				if (isPresent == null) {
 					subTask.addPlayer(player);
-					gameComponent.saveOrUpdateGame(game.get());
-					return new ResponseEntity("Player " + player.getId() + " has been added to subtask " + subtaskId,
-							HttpStatus.OK);
+					InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());
+					return new ResponseEntity(result, HttpStatus.OK);
 				} else {
 					return new ResponseEntity("Player " + player.getId() + " already present inside task " + taskId,
 							HttpStatus.PRECONDITION_FAILED);
@@ -537,8 +535,8 @@ public class GameRestController {
 			}
 		}
 		if (update) {
-			gameComponent.saveOrUpdateGame(game.get());
-			return new ResponseEntity("Subtask " + subtaskId + " has been completed", HttpStatus.OK);
+			InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());
+			return new ResponseEntity(result, HttpStatus.OK);
 		}
 		return new ResponseEntity("Subtask " + subtaskId + " has non been completed", HttpStatus.PRECONDITION_FAILED);
 	}
@@ -590,8 +588,8 @@ public class GameRestController {
 						savedSubTask.getPlayers().add(updated);
 					}
 				}
-				gameComponent.saveOrUpdateGame(game.get());
-				return new ResponseEntity("Subtask " + subtask.getId() + " has been updated", HttpStatus.OK);
+				InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());
+				return new ResponseEntity(result, HttpStatus.OK);
 			} else {
 				return new ResponseEntity("SubTask " + subtask.getId() + " not present inside game",
 						HttpStatus.PRECONDITION_FAILED);
