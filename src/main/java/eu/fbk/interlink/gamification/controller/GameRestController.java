@@ -85,7 +85,15 @@ public class GameRestController {
 	@DeleteMapping(value = "/game/{gameId}")
 	public void deleteGame(@PathVariable String gameId) {
 		gameId = ControllerUtils.decodePathVariable(gameId);
+		Optional<InterlinkGame> game = gameComponent.findById(gameId);
+
+		if (game.isEmpty()) {
+			return;
+		}
+
+		String coreGameId = ControllerUtils.getGameId(game.get().getProcessId(), game.get().getName());
 		gameComponent.deleteGameById(gameId);
+		interlinkRepo.deleteGameRule(coreGameId);
 	}
 
 	/**

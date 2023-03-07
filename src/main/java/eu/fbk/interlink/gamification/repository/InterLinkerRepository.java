@@ -23,6 +23,7 @@ import eu.fbk.interlink.gamification.domain.PlayerScore;
 import eu.fbk.interlink.gamification.util.ControllerUtils;
 import eu.trentorise.game.core.LogHub;
 import eu.trentorise.game.managers.ClassificationUtils;
+import eu.trentorise.game.managers.GameManager;
 import eu.trentorise.game.model.PointConcept.PeriodInstance;
 import eu.trentorise.game.repo.GamePersistence;
 import eu.trentorise.game.repo.StatePersistence;
@@ -37,6 +38,9 @@ public class InterLinkerRepository {
 
 	@Autowired
 	private eu.trentorise.game.repo.GameRepo gameRepo;
+	
+	@Autowired
+	private GameManager gameManager;
 
 	public Page<PlayerScore> search(String gameId, String pcName, String period, Pageable pageable) {
 		List<PlayerScore> result = new ArrayList<PlayerScore>();
@@ -103,7 +107,11 @@ public class InterLinkerRepository {
 		}
 		return new PageImpl<>(result, pageable, totalSize);
 	}
-
+	
+	public void deleteGameRule(String gameId) {
+		gameManager.deleteGame(gameId);
+	}
+	
 	private void exceptionHandler(String gameId, Exception e) {
 		LogHub.error(gameId, logger, "Exception running mongo query in search", e);
 		throw new IllegalArgumentException("Query seems to be not valid");
