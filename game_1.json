@@ -6,7 +6,8 @@
 			"owner": "interlink",
 			"domain": "",
 			"actions": [
-				"update_player_points"
+				"update_player_points",
+				"revert_player_points"
 			],
 			"tasks": [],
 			"rules": null,
@@ -115,21 +116,21 @@
 				"gameId": null,
 				"name": "update_development_points",
 				"id": null,
-				"content": "package eu.trentorise.game.model\n\nimport eu.trentorise.game.core.Utility;\n\n//declare any global variables here\nglobal Utility utils;\n\nrule \"update_development_points\"\nwhen\n   InputData( $development : data[\"development\"])\n    InputData( $devComplexity: data[\"devComplexity\"]);\n    $pc : PointConcept(name == \"development\")\nthen\n     utils.log(\"apply \\'update development points\\'\");\nDouble development = $development != null ? (Double) $development : 0;\n\nDouble devComplexity = $devComplexity != null ? (Double) $devComplexity : 0;\n\n$pc.setScore($pc.getScore() + (development * devComplexity));\nupdate($pc);\nend",
+				"content": "package eu.trentorise.game.model\r\nimport eu.trentorise.game.core.Utility;\r\n//declare any global variables here\r\nglobal Utility utils;\r\n\r\nrule \"update_development_points\"\r\nwhen\r\n    InputData( $development : data[\"development\"])\r\n    InputData( $devComplexity: data[\"devComplexity\"]);\r\n    InputData( $revertPoints : data[\"revertPoints\"])\r\n    $pc : PointConcept(name == \"development\")\r\nthen\r\n    utils.log(\"apply \\'update development points\\'\");\r\n    Double development = $development != null ? (Double) $development : 0;\r\n    Double devComplexity = $devComplexity != null ? (Double) $devComplexity : 0;\r\n    if ($revertPoints != null) {\r\n    \tutils.log(\"revert development points\");\r\n    \t$pc.setScore($pc.getScore() - (development * devComplexity));\r\n    } else {\r\n    \t$pc.setScore($pc.getScore() + (development * devComplexity));\r\n    }\r\n    update($pc);\r\nend",
 				"inputStream": {}
 			},
 			{
 				"gameId": null,
 				"name": "update_management_points",
 				"id": null,
-				"content": "package eu.trentorise.game.model\n\nimport eu.trentorise.game.core.Utility;\n\n//declare any global variables here\nglobal Utility utils;\n\nrule \"update_management_points\"\nwhen\n    InputData( $management : data[\"management\"])\n      InputData( $manageComplexity : data[\"manageComplexity\"])\n  $pc : PointConcept(name == \"management\")\nthen\n  utils.log(\"apply \\'update management points\\'\");\nDouble management = $management != null ? (Double) $management : 0;\n\nDouble manageComplexity = $manageComplexity != null ? (Double) $manageComplexity : 0;\n\n$pc.setScore($pc.getScore() + (management * manageComplexity));\nupdate($pc);\nend",
+				"content": "package eu.trentorise.game.model\r\nimport eu.trentorise.game.core.Utility;\r\n//declare any global variables here\r\nglobal Utility utils;\r\n\r\nrule \"update_management_points\"\r\nwhen\r\n    InputData( $management : data[\"management\"])\r\n    InputData( $manageComplexity : data[\"manageComplexity\"])\r\n    InputData( $revertPoints : data[\"revertPoints\"])\r\n    $pc : PointConcept(name == \"management\")\r\nthen\r\n    utils.log(\"apply \\'update management points\\'\");\r\n    Double management = $management != null ? (Double) $management : 0;\r\n    Double manageComplexity = $manageComplexity != null ? (Double) $manageComplexity : 0;\r\n    if ($revertPoints != null) {\r\n    \tutils.log(\"revert management points\");\r\n    \t$pc.setScore($pc.getScore() - (management * manageComplexity));\r\n    } else {\r\n    \t$pc.setScore($pc.getScore() + (management * manageComplexity));\r\n    }\r\n    update($pc);\r\nend",
 				"inputStream": {}
 			},
 			{
 				"gameId": null,
 				"name": "update_exploitation_points",
 				"id": null,
-				"content": "package eu.trentorise.game.model\n\nimport eu.trentorise.game.core.Utility;\n\n//declare any global variables here\nglobal Utility utils;\nrule \"update_exploitation_points\"\nwhen\n    InputData( $exploitation : data[\"exploitation\"])\n  InputData( $exploitComplexity : data[\"exploitComplexity\"])\n$pc : PointConcept(name == \"exploitation\")\nthen\n utils.log(\"apply \\'update exploitation points\\'\");\nDouble exploitation = $exploitation != null ? (Double) $exploitation : 0;\n\nDouble exploitComplexity = $exploitComplexity != null ? (Double) $exploitComplexity : 0;\n\n$pc.setScore($pc.getScore() + (exploitation * exploitComplexity));\nupdate($pc);\nend",
+				"content": "package eu.trentorise.game.model\r\nimport eu.trentorise.game.core.Utility;\r\n//declare any global variables here\r\nglobal Utility utils;\r\n\r\nrule \"update_exploitation_points\"\r\nwhen\r\n    InputData( $exploitation : data[\"exploitation\"])\r\n    InputData( $exploitComplexity : data[\"exploitComplexity\"])\r\n    InputData( $revertPoints : data[\"revertPoints\"])\r\n    $pc : PointConcept(name == \"exploitation\")\r\nthen\r\n    utils.log(\"apply \\'update exploitation points\\'\");\r\n    Double exploitation = $exploitation != null ? (Double) $exploitation : 0;\r\n    Double exploitComplexity = $exploitComplexity != null ? (Double) $exploitComplexity : 0;\r\n    \r\n   \tif ($revertPoints != null) {\r\n    \tutils.log(\"revert exploitation points\");\r\n    \t$pc.setScore($pc.getScore() - (exploitation * exploitComplexity));\r\n    } else {\r\n    \t$pc.setScore($pc.getScore() + (exploitation * exploitComplexity));\r\n    }\r\n    update($pc);\r\nend",
 				"inputStream": {}
 			}
 		],

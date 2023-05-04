@@ -230,6 +230,11 @@ public class GameRestController {
 				.findAny().orElse(null);
 
 		if (savedTask != null) {
+			
+			if (savedTask.isCompleted()) {
+				return new ResponseEntity("Task is already completed", HttpStatus.PRECONDITION_FAILED);
+			}
+			
 			savedTask.setCompleted(task.isCompleted());
 			savedTask.setDevelopment(task.getDevelopment());
 			savedTask.setExploitation(task.getExploitation());
@@ -283,6 +288,11 @@ public class GameRestController {
 				.orElse(null);
 
 		if (task != null) {
+			
+			if (task.isCompleted()) {
+				return new ResponseEntity("Task is already completed ",	HttpStatus.PRECONDITION_FAILED);
+			}
+			
 			boolean update = false;
 			InterlinkPlayer isPresent = task.getPlayers().stream()
 					.filter(findPlayer -> player.getId().equals(findPlayer.getId())).findAny().orElse(null);
@@ -304,6 +314,62 @@ public class GameRestController {
 		return new ResponseEntity("Player " + player.getId() + " has non been added to subtask " + taskId,
 				HttpStatus.PRECONDITION_FAILED);
 	}
+	
+	/**
+	 * Claim a task
+	 * 
+	 * @param gameId
+	 * @param taskId
+	 * @return Message
+	 */
+	@DeleteMapping(value = "/game/{gameId}/task/{taskId}/removePlayer")
+	public ResponseEntity<?> removeFromTask(@PathVariable(name = "gameId") String gameId,
+			@PathVariable(name = "taskId") String taskId, @RequestBody InterlinkPlayer player) {
+
+		gameId = ControllerUtils.decodePathVariable(gameId);
+		String idTask = ControllerUtils.decodePathVariable(taskId);
+
+		Optional<InterlinkGame> game = gameComponent.findById(gameId);
+		if (!game.isPresent()) {
+			return new ResponseEntity("Game is not present", HttpStatus.PRECONDITION_FAILED);
+		}
+
+		if (!game.get().isActive()) {
+			return new ResponseEntity("Game is suspended", HttpStatus.PRECONDITION_FAILED);
+		}
+
+		InterlinkTask task = game.get().getTaskList().stream().filter(t -> idTask.equals(t.getId())).findAny()
+				.orElse(null);
+
+		if (task != null) {
+			
+			if (task.isCompleted()) {
+				return new ResponseEntity("Task already completed", HttpStatus.PRECONDITION_FAILED);
+			}
+			
+			boolean update = false;
+			InterlinkPlayer isPresent = task.getPlayers().stream()
+					.filter(findPlayer -> player.getId().equals(findPlayer.getId())).findAny().orElse(null);
+			if (isPresent != null) {
+				task.removePlayer(player);
+				update = true;
+			} else {
+				return new ResponseEntity("Player " + player.getId() + " not present inside task " + taskId,
+						HttpStatus.PRECONDITION_FAILED);
+			}
+			if (update) {
+				InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());
+				// remove from player state
+				this.gamificationComponent.deletePlayerState(game.get().getProcessId(), game.get().getName(), player.getId());
+				return new ResponseEntity(result, HttpStatus.OK);
+			}
+		} else {
+			return new ResponseEntity("Task " + taskId + " not present inside game", HttpStatus.PRECONDITION_FAILED);
+		}
+
+		return new ResponseEntity("Player " + player.getId() + " has non been removed to task " + taskId,
+				HttpStatus.PRECONDITION_FAILED);
+	}
 
 	/**
 	 * Complete a game task
@@ -315,52 +381,78 @@ public class GameRestController {
 	@PutMapping(value = "/game/{gameId}/task/{taskId}/complete")
 	public ResponseEntity<?> completeTask(@PathVariable(name = "gameId") String gameId,
 			@PathVariable(name = "taskId") String taskId) {
-
 		gameId = ControllerUtils.decodePathVariable(gameId);
 		Optional<InterlinkGame> game = gameComponent.findById(gameId);
-
 		if (!game.isPresent()) {
 			return new ResponseEntity("Game is not present", HttpStatus.PRECONDITION_FAILED);
 		}
-
 		if (!game.get().isActive()) {
 			return new ResponseEntity("Game is suspended", HttpStatus.PRECONDITION_FAILED);
 		}
-
-		boolean update = false;
-		for (InterlinkTask task : game.get().getTaskList()) {
-			if (task.getId().equals(taskId)) {
-				if (task.isCompleted()) {
-					update = true;
-					break;
-				}
-
-				// update subtask player points
-				for (InterlinkTask subtask : task.getSubtaskList()) {
-					if (!subtask.isCompleted()) {
-						return new ResponseEntity("You have to complete  subtask " + subtask.getId()
-								+ " before to complete the task " + task.getId(), HttpStatus.PRECONDITION_FAILED);
-					}
-				}
-
-				// update task the player points
-				for (InterlinkPlayer player : task.getPlayers()) {
-					gamificationComponent.triggerAction(game.get().getProcessId(), game.get().getName(),
-							"update_player_points", player, task);
-				}
-
-				task.setCompleted(true);
-				update = true;
+		InterlinkTask savedTask = game.get().getTaskList().stream().filter(t -> taskId.equals(t.getId())).findAny()
+				.orElse(null);
+		if (savedTask != null) {
+			if (savedTask.isCompleted()) {
+				return new ResponseEntity("Task already completed ", HttpStatus.PRECONDITION_FAILED);
 			}
-		}
-
-		if (update) {
-			InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());			
+			// update subtask player points
+			for (InterlinkTask subtask : savedTask.getSubtaskList()) {
+				if (!subtask.isCompleted()) {
+					return new ResponseEntity("You have to complete  subtask " + subtask.getId()
+							+ " before to complete the task " + savedTask.getId(), HttpStatus.PRECONDITION_FAILED);
+				}
+			}
+			// update task the player points
+			for (InterlinkPlayer player : savedTask.getPlayers()) {
+				gamificationComponent.triggerAction(game.get().getProcessId(), game.get().getName(),
+						"update_player_points", player, savedTask);
+			}
+			savedTask.setCompleted(true);
+			InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());
 			return new ResponseEntity(result, HttpStatus.OK);
+		} else {
+			return new ResponseEntity("Task " + taskId + " is not present in game " + gameId,
+					HttpStatus.PRECONDITION_FAILED);
 		}
-		gameComponent.saveOrUpdateGame(game.get());
-		return new ResponseEntity("Task " + taskId + " is not present in game " + gameId,
-				HttpStatus.PRECONDITION_FAILED);
+	}
+	
+	/**
+	 * Revert a game task with scores
+	 * 
+	 * @param gameId
+	 * @param taskId
+	 * @return Message
+	 */
+	@PutMapping(value = "/game/{gameId}/task/{taskId}/revert")
+	public ResponseEntity<?> revertTask(@PathVariable(name = "gameId") String gameId,
+			@PathVariable(name = "taskId") String taskId) {
+		gameId = ControllerUtils.decodePathVariable(gameId);
+		Optional<InterlinkGame> game = gameComponent.findById(gameId);
+		if (!game.isPresent()) {
+			return new ResponseEntity("Game is not present", HttpStatus.PRECONDITION_FAILED);
+		}
+		if (!game.get().isActive()) {
+			return new ResponseEntity("Game is suspended", HttpStatus.PRECONDITION_FAILED);
+		}
+		InterlinkTask savedTask = game.get().getTaskList().stream().filter(t -> taskId.equals(t.getId())).findAny()
+				.orElse(null);
+		if (savedTask != null) {
+			if (!savedTask.isCompleted()) {
+				return new ResponseEntity("Task " + savedTask.getId() + "must be completed first.",
+						HttpStatus.PRECONDITION_FAILED);
+			}
+			// revert task with player points
+			for (InterlinkPlayer player : savedTask.getPlayers()) {
+				gamificationComponent.triggerAction(game.get().getProcessId(), game.get().getName(),
+						"revert_player_points", player, savedTask);
+			}
+			savedTask.setCompleted(false);
+			InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());
+			return new ResponseEntity(result, HttpStatus.OK);
+		} else {
+			return new ResponseEntity("Task " + taskId + " is not present in game " + gameId,
+					HttpStatus.PRECONDITION_FAILED);
+		}
 	}
 
 	/**
@@ -477,6 +569,11 @@ public class GameRestController {
 			InterlinkTask subTask = task.getSubtaskList().stream().filter(st -> subtaskId.equals(st.getId())).findAny()
 					.orElse(null);
 			if (subTask != null) {
+				
+				if (subTask.isCompleted()) {
+					return new ResponseEntity("SubTask is already completed ", HttpStatus.PRECONDITION_FAILED);
+				}
+				
 				InterlinkPlayer isPresent = subTask.getPlayers().stream().filter(p -> player.getId().equals(p.getId()))
 						.findAny().orElse(null);
 				if (isPresent == null) {
@@ -494,18 +591,19 @@ public class GameRestController {
 				HttpStatus.PRECONDITION_FAILED);
 
 	}
-
+	
 	/**
-	 * Complete a subtask
+	 * Claim a subtask
 	 * 
 	 * @param gameId
 	 * @param taskId
 	 * @param subtaskId
 	 * @return Message
 	 */
-	@PutMapping(value = "/game/{gameId}/task/{taskId}/subtask/{subtaskId}/complete")
-	public ResponseEntity<?> completeSubtask(@PathVariable(name = "gameId") String gameId,
-			@PathVariable(name = "taskId") String taskId, @PathVariable(name = "subtaskId") String subtaskId) {
+	@DeleteMapping(value = "/game/{gameId}/task/{taskId}/subtask/{subtaskId}/removePlayer")
+	public ResponseEntity<?> removeFromSubtask(@PathVariable(name = "gameId") String gameId,
+			@PathVariable(name = "taskId") String taskId, @PathVariable(name = "subtaskId") String subtaskId,
+			@RequestBody InterlinkPlayer player) {
 
 		gameId = ControllerUtils.decodePathVariable(gameId);
 		Optional<InterlinkGame> game = gameComponent.findById(gameId);
@@ -518,35 +616,131 @@ public class GameRestController {
 			return new ResponseEntity("Game is suspended", HttpStatus.PRECONDITION_FAILED);
 		}
 
-		boolean update = false;
+		InterlinkTask task = game.get().getTaskList().stream().filter(t -> taskId.equals(t.getId())).findAny()
+				.orElse(null);
 
-		for (InterlinkTask element : game.get().getTaskList()) {
-			if (element.getId().equals(taskId)) {
-				for (InterlinkTask subtask : element.getSubtaskList()) {
-					if (subtask.getId().equals(subtaskId)) {
-						if (subtask.isCompleted()) {
-							update = true;
-							return new ResponseEntity("Subtask " + subtaskId + " was already completed",
-									HttpStatus.PRECONDITION_FAILED);
-						}
-
-						// trigger player points assignement
-						for (InterlinkPlayer player : subtask.getPlayers()) {
-							gamificationComponent.triggerAction(game.get().getProcessId(), game.get().getName(),
-									"update_player_points", player, subtask);
-						}
-
-						subtask.setCompleted(true);
-						update = true;
-					}
+		if (task != null) {
+			InterlinkTask subTask = task.getSubtaskList().stream().filter(st -> subtaskId.equals(st.getId())).findAny()
+					.orElse(null);
+			if (subTask != null) {
+				
+				if (subTask.isCompleted()) {
+					return new ResponseEntity("SubTask already completed ", HttpStatus.PRECONDITION_FAILED);
+				}
+				
+				InterlinkPlayer isPresent = subTask.getPlayers().stream().filter(p -> player.getId().equals(p.getId()))
+						.findAny().orElse(null);
+				if (isPresent != null) {
+					subTask.removePlayer(player);
+					InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());
+					// remove from player state
+					this.gamificationComponent.deletePlayerState(game.get().getProcessId(), game.get().getName(), player.getId());
+					return new ResponseEntity(result, HttpStatus.OK);
+				} else {
+					return new ResponseEntity("Player " + player.getId() + " not present inside subtask " + subtaskId,
+							HttpStatus.PRECONDITION_FAILED);
 				}
 			}
 		}
-		if (update) {
-			InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());
-			return new ResponseEntity(result, HttpStatus.OK);
+
+		return new ResponseEntity("Player " + player.getId() + " has non been removed to subtask " + subtaskId,
+				HttpStatus.PRECONDITION_FAILED);
+
+	}
+
+	/**
+	 * Complete a subtask
+	 * 
+	 * @param gameId
+	 * @param taskId
+	 * @param subtaskId
+	 * @return Message
+	 */
+	@PutMapping(value = "/game/{gameId}/task/{taskId}/subtask/{subtaskId}/complete")
+	public ResponseEntity<?> completeSubtask(@PathVariable(name = "gameId") String gameId,
+			@PathVariable(name = "taskId") String taskId, @PathVariable(name = "subtaskId") String subtaskId) {
+		gameId = ControllerUtils.decodePathVariable(gameId);
+		Optional<InterlinkGame> game = gameComponent.findById(gameId);
+		if (!game.isPresent()) {
+			return new ResponseEntity("Game is not present", HttpStatus.PRECONDITION_FAILED);
 		}
-		return new ResponseEntity("Subtask " + subtaskId + " has non been completed", HttpStatus.PRECONDITION_FAILED);
+		if (!game.get().isActive()) {
+			return new ResponseEntity("Game is suspended", HttpStatus.PRECONDITION_FAILED);
+		}
+		InterlinkTask savedTask = game.get().getTaskList().stream().filter(t -> taskId.equals(t.getId())).findAny()
+				.orElse(null);
+		if (savedTask != null) {
+			InterlinkTask savedSubTask = savedTask.getSubtaskList().stream().filter(st -> subtaskId.equals(st.getId()))
+					.findAny().orElse(null);
+			if (savedSubTask != null) {
+				if (savedSubTask.isCompleted()) {
+					return new ResponseEntity("Subtask already completed", HttpStatus.PRECONDITION_FAILED);
+				}
+				// trigger player points assignment
+				for (InterlinkPlayer player : savedSubTask.getPlayers()) {
+					gamificationComponent.triggerAction(game.get().getProcessId(), game.get().getName(),
+							"update_player_points", player, savedSubTask);
+				}
+				savedSubTask.setCompleted(true);
+				InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());
+				return new ResponseEntity(result, HttpStatus.OK);
+			} else {
+				return new ResponseEntity("SubTask " + subtaskId + " is not present in task " + taskId,
+						HttpStatus.PRECONDITION_FAILED);
+			}
+
+		} else {
+			return new ResponseEntity("Task " + taskId + " is not present in game " + gameId,
+					HttpStatus.PRECONDITION_FAILED);
+		}
+	}
+	
+	/**
+	 * Revert a subtask with points
+	 * 
+	 * @param gameId
+	 * @param taskId
+	 * @param subtaskId
+	 * @return Message
+	 */
+	@PutMapping(value = "/game/{gameId}/task/{taskId}/subtask/{subtaskId}/revert")
+	public ResponseEntity<?> revertSubtask(@PathVariable(name = "gameId") String gameId,
+			@PathVariable(name = "taskId") String taskId, @PathVariable(name = "subtaskId") String subtaskId) {
+		gameId = ControllerUtils.decodePathVariable(gameId);
+		Optional<InterlinkGame> game = gameComponent.findById(gameId);
+		if (!game.isPresent()) {
+			return new ResponseEntity("Game is not present", HttpStatus.PRECONDITION_FAILED);
+		}
+		if (!game.get().isActive()) {
+			return new ResponseEntity("Game is suspended", HttpStatus.PRECONDITION_FAILED);
+		}
+		InterlinkTask savedTask = game.get().getTaskList().stream().filter(t -> taskId.equals(t.getId())).findAny()
+				.orElse(null);
+		if (savedTask != null) {
+			InterlinkTask savedSubTask = savedTask.getSubtaskList().stream().filter(st -> subtaskId.equals(st.getId()))
+					.findAny().orElse(null);
+			if (savedSubTask != null) {
+				if (!savedSubTask.isCompleted()) {
+					return new ResponseEntity("Subtask " + subtaskId + " must be completed",
+							HttpStatus.PRECONDITION_FAILED);
+				}
+				// trigger player points assignement
+				for (InterlinkPlayer player : savedSubTask.getPlayers()) {
+					gamificationComponent.triggerAction(game.get().getProcessId(), game.get().getName(),
+							"revert_player_points", player, savedSubTask);
+				}
+				savedSubTask.setCompleted(false);
+				InterlinkGame result = gameComponent.saveOrUpdateGame(game.get());
+				return new ResponseEntity(result, HttpStatus.OK);
+			} else {
+				return new ResponseEntity("SubTask " + subtaskId + " is not present in task " + taskId,
+						HttpStatus.PRECONDITION_FAILED);
+			}
+
+		} else {
+			return new ResponseEntity("Task " + taskId + " is not present in game " + gameId,
+					HttpStatus.PRECONDITION_FAILED);
+		}
 	}
 
 	/**
@@ -580,6 +774,11 @@ public class GameRestController {
 					.filter(st -> subtask.getId().equals(st.getId())).findAny().orElse(null);
 
 			if (savedSubTask != null) {
+				
+				if (savedSubTask.isCompleted()) {
+					return new ResponseEntity("SubTask is already completed ", HttpStatus.PRECONDITION_FAILED);
+				}
+				
 				savedSubTask.setDevelopment(subtask.getDevelopment());
 				savedSubTask.setManagement(subtask.getManagement());
 				savedSubTask.setExploitation(subtask.getExploitation());

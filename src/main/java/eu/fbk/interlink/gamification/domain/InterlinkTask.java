@@ -96,10 +96,10 @@ public class InterlinkTask {
 		this.playerList.add(playerId);
 	}
 	
-	public void removePlayer(InterlinkPlayer playerId) {
+	public void removePlayer(InterlinkPlayer removePlayer) {
 		InterlinkPlayer toRemove = null;
 		for (InterlinkPlayer player : this.playerList) {
-		    if (player.getId().equals(id)) {
+		    if (player.getId().equals(removePlayer.getId())) {
 		    	toRemove = player;
 		    	break;
 		    }

@@ -21,7 +21,6 @@ import eu.fbk.interlink.gamification.domain.InterlinkPlayer;
 import eu.fbk.interlink.gamification.domain.InterlinkTask;
 import eu.fbk.interlink.gamification.sec.IdentityLookupComponent;
 import eu.trentorise.game.config.AppConfig;
-import eu.trentorise.game.config.MongoConfig;
 import eu.trentorise.game.core.config.TestCoreConfiguration;
 import eu.trentorise.game.managers.GameManager;
 import eu.trentorise.game.model.Game;
@@ -43,7 +42,7 @@ import eu.trentorise.game.services.PlayerService;
 public class InterlinkTemplateComplexityTest {
 
 	private static final String GAME = "interLinkGameTest";
-	private static final String ACTION = "update_player_points";
+	private static final String[] ACTION = {"update_player_points", "revert_player_points"};
 	private static final String DOMAIN = "my-domain";
 
 	@Autowired
@@ -97,8 +96,9 @@ public class InterlinkTemplateComplexityTest {
 		game.setDomain(DOMAIN);
 
 		game.setActions(new HashSet<String>());
-		game.getActions().add(ACTION);
-
+		for (String a : ACTION) {
+			game.getActions().add(a);
+		}
 		game.setConcepts(new HashSet<GameConcept>());
 		game.getConcepts().add(new PointConcept("management"));
 		game.getConcepts().add(new PointConcept("development"));
@@ -137,7 +137,7 @@ public class InterlinkTemplateComplexityTest {
 		gamificationComponent.triggerAction(TEMPLATE_ID, TEMPLATE_NAME, "update_player_points", player, task);
 
 		PlayerState p = playerSrv.loadState(TEMPLATE_ID + "-" + TEMPLATE_NAME, PLAYER_ID, false, false);
-		// expected 8.43 development points.
+		// expected 12 development points.
 		boolean found = false;
 		for (GameConcept gc : p.getState()) {
 			if (gc instanceof PointConcept && gc.getName().equals("development")) {
@@ -156,6 +156,81 @@ public class InterlinkTemplateComplexityTest {
 		if (!found) {
 			Assert.fail("gameconcepts not found");
 		}
+	}
+	
+	@Test
+	public void revertExecutionTask() throws InterruptedException {
+		initClasspathRuleGame();
+		InterlinkGame template = new InterlinkGame();
+		template.setProcessId(TEMPLATE_ID);
+		template.setName(TEMPLATE_NAME);
+		InterlinkTask task = new InterlinkTask();
+		// complexities.
+		task.setDevelopment(4);
+		task.setExploitation(3);
+		task.setManagement(5);
+		task.setId(TASK_ID);
+		template.addTask(task);
+		// add player contribution.
+		InterlinkPlayer player = new InterlinkPlayer();
+		player.setId(PLAYER_ID);
+		player.setName(PLAYER_NAME);
+		player.setDevelopment(3);
+		player.setManagement(2);
+		player.setExploitation(1);
+		task.addPlayer(player);
+		gameComponent.saveOrUpdateGame(template);
+
+		// complete task.
+		gamificationComponent.triggerAction(TEMPLATE_ID, TEMPLATE_NAME, "update_player_points", player, task);
+
+		PlayerState p = playerSrv.loadState(TEMPLATE_ID + "-" + TEMPLATE_NAME, PLAYER_ID, false, false);
+		// expected 12 development points.
+		boolean found = false;
+		for (GameConcept gc : p.getState()) {
+			if (gc instanceof PointConcept && gc.getName().equals("development")) {
+				found = true;
+				Assert.assertEquals(12.0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+			if (gc instanceof PointConcept && gc.getName().equals("management")) {
+				found = true;
+				Assert.assertEquals(10.0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+			if (gc instanceof PointConcept && gc.getName().equals("exploitation")) {
+				found = true;
+				Assert.assertEquals(3.0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+		}
+		if (!found) {
+			Assert.fail("gameconcepts not found");
+		}
+		
+		// revert completed task.
+		gamificationComponent.triggerAction(TEMPLATE_ID, TEMPLATE_NAME, "revert_player_points", player, task);
+		
+		p = playerSrv.loadState(TEMPLATE_ID + "-" + TEMPLATE_NAME, PLAYER_ID, false, false);
+		// expected 0 development points.
+	
+		found = false;
+		for (GameConcept gc : p.getState()) {
+			if (gc instanceof PointConcept && gc.getName().equals("development")) {
+				found = true;
+				Assert.assertEquals(0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+			if (gc instanceof PointConcept && gc.getName().equals("management")) {
+				found = true;
+				Assert.assertEquals(0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+			if (gc instanceof PointConcept && gc.getName().equals("exploitation")) {
+				found = true;
+				Assert.assertEquals(0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+		}
+		
+		if (!found) {
+			Assert.fail("gameconcepts not found");
+		}
+
 	}
 	
 	@Test
@@ -187,7 +262,7 @@ public class InterlinkTemplateComplexityTest {
 		gamificationComponent.triggerAction(TEMPLATE_ID, TEMPLATE_NAME, "update_player_points", player, subTask);
 
 		PlayerState p = playerSrv.loadState(TEMPLATE_ID + "-" + TEMPLATE_NAME, PLAYER_ID, false, false);
-		// expected 8.43 development points.
+		// expected 12 development points.
 		boolean found = false;
 		for (GameConcept gc : p.getState()) {
 			if (gc instanceof PointConcept && gc.getName().equals("development")) {
@@ -206,6 +281,79 @@ public class InterlinkTemplateComplexityTest {
 		if (!found) {
 			Assert.fail("gameconcepts not found");
 		}
+	}
+	
+	@Test
+	public void revertExecutionSubTask() throws InterruptedException {
+		initClasspathRuleGame();
+		InterlinkGame template = new InterlinkGame();
+		template.setProcessId(TEMPLATE_ID);
+		template.setName(TEMPLATE_NAME);
+		InterlinkTask task = new InterlinkTask();
+		task.setId(TASK_ID);
+		InterlinkTask subTask = new InterlinkTask();
+		// complexities.
+		subTask.setDevelopment(4);
+		subTask.setExploitation(3);
+		subTask.setManagement(5);
+		// add player contribution.
+		InterlinkPlayer player = new InterlinkPlayer();
+		player.setId(PLAYER_ID);
+		player.setName(PLAYER_NAME);
+		player.setDevelopment(3);
+		player.setManagement(2);
+		player.setExploitation(1);
+		subTask.addPlayer(player);
+		task.addSubtask(subTask);
+		template.addTask(task);
+		gameComponent.saveOrUpdateGame(template);
+
+		// complete task.
+		gamificationComponent.triggerAction(TEMPLATE_ID, TEMPLATE_NAME, "update_player_points", player, subTask);
+
+		PlayerState p = playerSrv.loadState(TEMPLATE_ID + "-" + TEMPLATE_NAME, PLAYER_ID, false, false);
+		// expected 12.0 development points.
+		boolean found = false;
+		for (GameConcept gc : p.getState()) {
+			if (gc instanceof PointConcept && gc.getName().equals("development")) {
+				found = true;
+				Assert.assertEquals(12.0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+			if (gc instanceof PointConcept && gc.getName().equals("management")) {
+				found = true;
+				Assert.assertEquals(10.0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+			if (gc instanceof PointConcept && gc.getName().equals("exploitation")) {
+				found = true;
+				Assert.assertEquals(3.0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+		}
+		if (!found) {
+			Assert.fail("gameconcepts not found");
+		}
+		
+		// revert completed task.
+		gamificationComponent.triggerAction(TEMPLATE_ID, TEMPLATE_NAME, "revert_player_points", player, subTask);
+		p = playerSrv.loadState(TEMPLATE_ID + "-" + TEMPLATE_NAME, PLAYER_ID, false, false);
+		// expected 0 development points.
+		found = false;
+		for (GameConcept gc : p.getState()) {
+			if (gc instanceof PointConcept && gc.getName().equals("development")) {
+				found = true;
+				Assert.assertEquals(0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+			if (gc instanceof PointConcept && gc.getName().equals("management")) {
+				found = true;
+				Assert.assertEquals(0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+			if (gc instanceof PointConcept && gc.getName().equals("exploitation")) {
+				found = true;
+				Assert.assertEquals(0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+		}
+		if (!found) {
+			Assert.fail("gameconcepts not found");
+		}		
 	}
 
 }

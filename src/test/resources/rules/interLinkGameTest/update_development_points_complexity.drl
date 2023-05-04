@@ -1,7 +1,5 @@
 package eu.trentorise.game.model
-
 import eu.trentorise.game.core.Utility;
-
 //declare any global variables here
 global Utility utils;
 
@@ -9,13 +7,17 @@ rule "update_development_points"
 when
     InputData( $development : data["development"])
     InputData( $devComplexity: data["devComplexity"]);
+    InputData( $revertPoints : data["revertPoints"])
     $pc : PointConcept(name == "development")
 then
     utils.log("apply \'update development points\'");
     Double development = $development != null ? (Double) $development : 0;
     Double devComplexity = $devComplexity != null ? (Double) $devComplexity : 0;
-
-    
-    $pc.setScore($pc.getScore() + (development * devComplexity));
+    if ($revertPoints != null) {
+    	utils.log("revert development points");
+    	$pc.setScore($pc.getScore() - (development * devComplexity));
+    } else {
+    	$pc.setScore($pc.getScore() + (development * devComplexity));
+    }
     update($pc);
 end

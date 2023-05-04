@@ -101,6 +101,10 @@ public class GamificationEngineFacadeComponent {
 		data.put("devComplexity", task.getDevelopment());
 		data.put("manageComplexity", task.getManagement());
 		data.put("exploitComplexity", task.getExploitation());
+		
+		if (action.equals("revert_player_points")) {
+			data.put("revertPoints", "true");
+		}
 
 		workflow.apply(getGameId(processId, name), action, player.getId(), data, null);
 
@@ -141,5 +145,16 @@ public class GamificationEngineFacadeComponent {
 
 		return gameSrv.loadGameStats(getGameId(processId, name), pointConcept, null, null, null, null);
 	}
+	
+	/**
+	 * Delete player state.
+	 * @param processId
+	 * @param name
+	 * @param playerId
+	 */
+	public void deletePlayerState(String processId, String name, String playerId) {
+	    this.playerSrv.deleteState(getGameId(processId, name), playerId);	
+	}
+	
 
 }
