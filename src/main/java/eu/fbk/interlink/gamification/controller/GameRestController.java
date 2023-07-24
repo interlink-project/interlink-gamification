@@ -91,6 +91,13 @@ public class GameRestController {
 			return;
 		}
 
+		for (InterlinkTask td: game.get().getTaskList()) {
+			List<InterlinkPlayer> players = td.getPlayers();
+			for (InterlinkPlayer p: players) {
+				this.gamificationComponent.deletePlayerState(game.get().getProcessId(), game.get().getName(), p.getId());
+			}
+		}
+		
 		String coreGameId = ControllerUtils.getGameId(game.get().getProcessId(), game.get().getName());
 		gameComponent.deleteGameById(gameId);
 		interlinkRepo.deleteGameRule(coreGameId);
