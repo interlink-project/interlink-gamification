@@ -15,7 +15,11 @@ then
     Double manageComplexity = $manageComplexity != null ? (Double) $manageComplexity : 0;
     if ($revertPoints != null) {
     	utils.log("revert management points");
-    	$pc.setScore($pc.getScore() - (management * manageComplexity));
+    	if ($pc.getScore() - (management * manageComplexity) < 0) {
+    		$pc.setScore(0d);
+    	} else {
+    		$pc.setScore($pc.getScore() - (management * manageComplexity));
+    	}
     } else {
     	$pc.setScore($pc.getScore() + (management * manageComplexity));
     }

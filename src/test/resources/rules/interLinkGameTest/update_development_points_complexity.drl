@@ -15,7 +15,12 @@ then
     Double devComplexity = $devComplexity != null ? (Double) $devComplexity : 0;
     if ($revertPoints != null) {
     	utils.log("revert development points");
-    	$pc.setScore($pc.getScore() - (development * devComplexity));
+    	if ($pc.getScore() - (development * devComplexity) < 0 ) {
+    		$pc.setScore(0d);
+    	}
+    	else {
+    		$pc.setScore($pc.getScore() - (development * devComplexity));
+    	}
     } else {
     	$pc.setScore($pc.getScore() + (development * devComplexity));
     }

@@ -355,5 +355,107 @@ public class InterlinkTemplateComplexityTest {
 			Assert.fail("gameconcepts not found");
 		}		
 	}
+	
+	
+	@Test
+	public void nonNegativeScoreInrevertExecutionTask() throws InterruptedException {
+		initClasspathRuleGame();
+		InterlinkGame template = new InterlinkGame();
+		template.setProcessId(TEMPLATE_ID);
+		template.setName(TEMPLATE_NAME);
+		InterlinkTask task = new InterlinkTask();
+		// complexities.
+		task.setDevelopment(4);
+		task.setExploitation(3);
+		task.setManagement(5);
+		task.setId(TASK_ID);
+		template.addTask(task);
+		// add player contribution.
+		InterlinkPlayer player = new InterlinkPlayer();
+		player.setId(PLAYER_ID);
+		player.setName(PLAYER_NAME);
+		player.setDevelopment(3);
+		player.setManagement(2);
+		player.setExploitation(1);
+		task.addPlayer(player);
+		gameComponent.saveOrUpdateGame(template);
+
+		// complete task.
+		gamificationComponent.triggerAction(TEMPLATE_ID, TEMPLATE_NAME, "update_player_points", player, task);
+
+		PlayerState p = playerSrv.loadState(TEMPLATE_ID + "-" + TEMPLATE_NAME, PLAYER_ID, false, false);
+		// expected 12 development points.
+		boolean found = false;
+		for (GameConcept gc : p.getState()) {
+			if (gc instanceof PointConcept && gc.getName().equals("development")) {
+				found = true;
+				Assert.assertEquals(12.0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+			if (gc instanceof PointConcept && gc.getName().equals("management")) {
+				found = true;
+				Assert.assertEquals(10.0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+			if (gc instanceof PointConcept && gc.getName().equals("exploitation")) {
+				found = true;
+				Assert.assertEquals(3.0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+		}
+		if (!found) {
+			Assert.fail("gameconcepts not found");
+		}
+		
+		// revert completed task.
+		gamificationComponent.triggerAction(TEMPLATE_ID, TEMPLATE_NAME, "revert_player_points", player, task);
+		
+		p = playerSrv.loadState(TEMPLATE_ID + "-" + TEMPLATE_NAME, PLAYER_ID, false, false);
+		// expected 0 development points.
+	
+		found = false;
+		for (GameConcept gc : p.getState()) {
+			if (gc instanceof PointConcept && gc.getName().equals("development")) {
+				found = true;
+				Assert.assertEquals(0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+			if (gc instanceof PointConcept && gc.getName().equals("management")) {
+				found = true;
+				Assert.assertEquals(0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+			if (gc instanceof PointConcept && gc.getName().equals("exploitation")) {
+				found = true;
+				Assert.assertEquals(0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+		}
+		
+		if (!found) {
+			Assert.fail("gameconcepts not found");
+		}
+		
+		// revert completed task.
+		gamificationComponent.triggerAction(TEMPLATE_ID, TEMPLATE_NAME, "revert_player_points", player, task);
+
+		p = playerSrv.loadState(TEMPLATE_ID + "-" + TEMPLATE_NAME, PLAYER_ID, false, false);
+		// expected 0 development points.
+
+		found = false;
+		for (GameConcept gc : p.getState()) {
+			if (gc instanceof PointConcept && gc.getName().equals("development")) {
+				found = true;
+				Assert.assertEquals(0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+			if (gc instanceof PointConcept && gc.getName().equals("management")) {
+				found = true;
+				Assert.assertEquals(0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+			if (gc instanceof PointConcept && gc.getName().equals("exploitation")) {
+				found = true;
+				Assert.assertEquals(0d, ((PointConcept) gc).getScore().doubleValue(), 0);
+			}
+		}
+
+		if (!found) {
+			Assert.fail("gameconcepts not found");
+		}
+
+	}
 
 }
